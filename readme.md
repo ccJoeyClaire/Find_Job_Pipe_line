@@ -601,7 +601,7 @@ Airflow 服务默认配置：
 - [ ] 支持更多数据源（其他招聘网站）
 - [ ] 添加实时数据处理能力（Kafka/Streaming）
 - [ ] 构建数据可视化 Dashboard
-- [ ] 添加机器学习模型（职位匹配推荐）
+- [ ] 添加更多机器学习模型（职位匹配推荐）
 
 ### 长期规划
 - [ ] 迁移到云环境（AWS S3、EMR 等）
@@ -640,7 +640,7 @@ Airflow 服务默认配置：
 
 如有问题或建议，欢迎通过以下方式联系：
 - GitHub Issues
-- Email: [your-email@example.com]
+- Email: [joeyclaire234@gmail.com]
 
 ---
 

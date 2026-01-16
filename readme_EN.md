@@ -601,7 +601,7 @@ Airflow service default configuration:
 - [ ] Support more data sources (other job websites)
 - [ ] Add real-time data processing capabilities (Kafka/Streaming)
 - [ ] Build data visualization Dashboard
-- [ ] Add machine learning models (job matching recommendations)
+- [ ] Add more machine learning models (job matching recommendations)
 
 ### Long-term Planning
 - [ ] Migrate to cloud environment (AWS S3, EMR, etc.)
@@ -640,7 +640,7 @@ Thanks to the following open-source projects and technical communities:
 
 For questions or suggestions, please contact us through:
 - GitHub Issues
-- Email: [your-email@example.com]
+- Email: [joeyclaire234@gmail.com]
 
 ---
 
