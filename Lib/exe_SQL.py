@@ -2,7 +2,10 @@ import duckdb
 import os
 import sys
 current_dir = os.getcwd()
-project_root = os.path.dirname(current_dir)
+if current_dir.endswith('Find_Job_Pipe_Line_V2'):
+    project_root = current_dir
+else:
+    project_root = os.path.dirname(current_dir)
 
 class Exe_SQL:
     def __init__(self, 
@@ -47,7 +50,7 @@ class Exe_SQL:
     def execute_sql_file(self, sql_file_name: str):
         sql_file_path = os.path.join(project_root, 'Lib', 'SQL_script', sql_file_name)
         try:
-            with open(sql_file_path, 'r') as file:
+            with open(sql_file_path, 'r', encoding='utf-8') as file:
                 sql_text = file.read()
             return self.execute_sql(sql_text)
         except Exception as e:

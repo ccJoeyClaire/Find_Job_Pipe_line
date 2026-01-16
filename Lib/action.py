@@ -55,75 +55,77 @@ class driver_manager:
         import os
         import glob
         
+        if chrome_driver_path is None:
+            chrome_driver_path = "C:\ProgramData\chromedriver\chromedriver.exe"
+
         try:
             if chrome_driver_path:
                 # 使用指定的 ChromeDriver 路径
                 if not os.path.exists(chrome_driver_path):
-                    raise FileNotFoundError(f"ChromeDriver 不存在: {chrome_driver_path}")
+                    raise FileNotFoundError(f"ChromeDriver does not exist: {chrome_driver_path}")
                 service = Service(chrome_driver_path)
             else:
                 # 优先使用系统安装的 ChromeDriver（Docker 构建时安装）
                 system_chromedriver = "/usr/local/bin/chromedriver"
-                print(f"🔍 检查系统 ChromeDriver: {system_chromedriver}")
+                print(f" Checking system ChromeDriver: {system_chromedriver}")
                 service = None
                 
                 if os.path.exists(system_chromedriver):
                     # 检查文件是否可执行
                     if os.access(system_chromedriver, os.X_OK):
-                        print(f"✅ 使用系统 ChromeDriver: {system_chromedriver}")
+                        print(f" Using system ChromeDriver: {system_chromedriver}")
                         service = Service(system_chromedriver)
                     else:
-                        print(f"⚠️  系统 ChromeDriver 存在但不可执行，尝试添加执行权限")
+                        print(f" System ChromeDriver exists but is not executable, trying to add execution permission")
                         try:
                             os.chmod(system_chromedriver, 0o755)
                             if os.access(system_chromedriver, os.X_OK):
-                                print(f"✅ 使用系统 ChromeDriver: {system_chromedriver}")
+                                print(f" Using system ChromeDriver: {system_chromedriver}")
                                 service = Service(system_chromedriver)
                             else:
-                                print(f"❌ 无法设置执行权限，尝试其他方法")
+                                print(f" Cannot set execution permission, trying other methods")
                         except Exception as e:
-                            print(f"❌ 设置执行权限失败: {e}，尝试其他方法")
+                            print(f" Setting execution permission failed: {e}，trying other methods")
                 else:
-                    print(f"⚠️  系统 ChromeDriver 不存在: {system_chromedriver}")
+                    print(f" System ChromeDriver does not exist: {system_chromedriver}")
                 
                 # 如果系统 ChromeDriver 不可用，尝试其他方法
                 if service is None:
                     # 尝试查找本地已下载的 ChromeDriver（webdriver_manager 的缓存位置）
-                    print(f"🔍 查找本地缓存的 ChromeDriver...")
+                    print(f" Finding local cached ChromeDriver...")
                     local_driver_path = self._find_local_chromedriver()
                     if local_driver_path and os.path.exists(local_driver_path):
-                        print(f"✅ 使用本地 ChromeDriver: {local_driver_path}")
+                        print(f" Using local ChromeDriver: {local_driver_path}")
                         service = Service(local_driver_path)
                     else:
                         # 尝试自动下载（可能失败）
-                        print(f"⚠️  尝试自动下载 ChromeDriver（可能因网络问题失败）...")
+                        print(f" Attempting to automatically download ChromeDriver (可能因网络问题失败)...")
                         try:
                             service = Service(ChromeDriverManager().install())
-                            print(f"✅ ChromeDriver 下载成功")
+                            print(f" ChromeDriver download successful")
                         except Exception as e:
-                            print(f"❌ ChromeDriverManager 下载失败: {e}")
-                            print("💡 提示: 可以手动指定 ChromeDriver 路径，或检查网络连接")
+                            print(f" ChromeDriverManager download failed: {e}")
+                            print("Tips: Can manually specify ChromeDriver path, or check network connection")
                             raise ConnectionError(
-                                f"无法下载 ChromeDriver: {e}\n"
-                                "解决方案:\n"
-                                "1. 检查网络连接（需要访问 GitHub）\n"
-                                "2. 手动下载 ChromeDriver 并指定路径\n"
-                                "3. 使用代理或 VPN\n"
-                                "4. 确保 Docker 构建时 ChromeDriver 已正确安装到 /usr/local/bin/chromedriver"
+                                f"Cannot download ChromeDriver: {e}\n"
+                                "Solutions:\n"
+                                "1. Check network connection (need to access GitHub）\n"
+                                "2. Manually download ChromeDriver and specify path\n"
+                                "3. Use proxy or VPN\n"
+                                "4. Ensure ChromeDriver is correctly installed in /usr/local/bin/chromedriver when building Docker"
                             )
             
             # 配置 Chrome 选项（支持 Docker 环境）
             
             chrome_options = Options()
 
-            '''
-            chrome_options.add_argument('--headless')  # 无头模式
-            chrome_options.add_argument('--no-sandbox')  # Docker 环境必需
-            chrome_options.add_argument('--disable-dev-shm-usage')  # 避免共享内存问题
-            chrome_options.add_argument('--disable-gpu')  # 禁用 GPU
-            chrome_options.add_argument('--window-size=1920,1080')  # 设置窗口大小
-            chrome_options.add_argument('--disable-blink-features=AutomationControlled')  # 避免被检测
-            '''
+            
+            # chrome_options.add_argument('--headless')  # 无头模式
+            # chrome_options.add_argument('--no-sandbox')  # Docker 环境必需
+            # chrome_options.add_argument('--disable-dev-shm-usage')  # 避免共享内存问题
+            # chrome_options.add_argument('--disable-gpu')  # 禁用 GPU
+            # chrome_options.add_argument('--window-size=1920,1080')  # 设置窗口大小
+            # chrome_options.add_argument('--disable-blink-features=AutomationControlled')  # 避免被检测
 
             # 检测是否在 Docker 环境中
             if os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER'):
@@ -136,7 +138,7 @@ class driver_manager:
         except ConnectionError:
             raise
         except Exception as e:
-            print(f"❌ 初始化浏览器驱动失败: {e}")
+            print(f" Initialization of browser driver failed: {e}")
             raise
     
     def _find_local_chromedriver(self) -> str:
@@ -183,14 +185,69 @@ class driver_manager:
         
         return None
 
-    def get_url(self, target_url: str = None):
+    def is_page_loaded(self, expected_url: str = None, check_element: tuple = None, wait_time: int = 10) -> bool:
+        """
+        args:
+            expected_url: str
+            check_element: tuple
+            wait_time: int
+        return: bool, dict
+        """
+        try:
+            # 等待页面 readyState 为 complete
+            WebDriverWait(self.driver, wait_time).until(
+                lambda driver: driver.execute_script("return document.readyState") == "complete"
+            )
+            
+            # 检查特定元素是否存在（如果提供了）
+            if check_element is not None:
+                by, value = check_element
+                element = self.get_element(by, value, wait_time=5)
+                if element is None:
+                    print(f" Expected element not found: {by}={value}")
+                    page_info = {
+                        'url': self.driver.current_url,
+                        'page_source': self.driver.page_source,
+                    }
+                    return False, page_info
+            
+            return True, {}
+            
+        except Exception as e:
+            print(f" Page load detection failed: {e}")
+            return False, f"页面加载检测失败: {e}"
+
+    def get_url(self, target_url: str = None, check_element: tuple = None):
+        """
+        访问 URL 并等待页面加载
+        
+        Args:
+            target_url: 目标 URL
+            check_element: 可选，要检查的元素定位器 (By, value) 用于验证页面是否加载成功
+        """
         if target_url is not None:
             self.base_url = target_url
         
         self.driver.get(self.base_url)
         time.sleep(2)  # 等待页面加载
+        
+        # 可选：检查页面是否成功加载
+        if check_element is not None:
+            if not self.is_page_loaded(expected_url=self.base_url, check_element=check_element):
+                print(f" Warning: Page may not have been loaded: {self.base_url}")
 
-    def switch_to_url(self, old_params_keys: List[str], new_params_values: List[str]):
+    def switch_to_url(self, old_params_keys: List[str], new_params_values: List[str], check_element: tuple = None) -> bool:
+        """
+        切换 URL 参数并等待页面加载
+        
+        Args:
+            old_params_keys: 要修改的参数键列表
+            new_params_values: 新的参数值列表
+            check_element: 可选，要检查的元素定位器 (By, value) 用于验证页面是否加载成功
+        
+        Returns:
+            bool: True 表示页面加载成功，False 表示加载失败
+        """
         parsed = urlparse(self.driver.current_url)
         params = parse_qs(parsed.query)
         if type(old_params_keys) == list:
@@ -208,6 +265,10 @@ class driver_manager:
                               parsed.fragment))
         self.driver.get(new_url)
         time.sleep(2)  # 等待页面加载
+        
+        # 检查页面是否成功加载
+        page_loaded, error_message = self.is_page_loaded(expected_url=new_url, check_element=check_element)
+        return page_loaded, error_message
 
     def get_element(self, by, value, wait_time=10):
         """
@@ -331,7 +392,7 @@ class driver_manager:
         with open(cookies_path, 'w', encoding='utf-8') as f:
             json.dump(cookies, f, indent=2, ensure_ascii=False)
         
-        print(f"✅ Cookies 已保存到: {cookies_path}")
+        print(f" Cookies saved to: {cookies_path}")
         return cookies_path
 
     def load_cookies(self, cookies_path: str, target_url: str = None):
@@ -363,14 +424,14 @@ class driver_manager:
                     cookie['expiry'] = int(cookie['expiry'])
                 self.driver.add_cookie(cookie)
             except Exception as e:
-                print(f"⚠️  加载 cookie 失败: {cookie.get('name', 'unknown')} - {e}")
+                print(f" Loading cookie failed: {cookie.get('name', 'unknown')} - {e}")
         
         # 刷新页面以应用 cookies
         if target_url:
             self.driver.refresh()
             time.sleep(2)
         
-        print(f"✅ Cookies 已从 {cookies_path} 加载")
+        print(f" Cookies loaded from {cookies_path}")
         return True
 
 
@@ -756,7 +817,7 @@ class element_manager:
         """
         info = self.get_locator_info()
         print("=" * 50)
-        print("元素定位信息:")
+        print("Element location information:")
         print("=" * 50)
         
         if info['id']:
@@ -787,12 +848,12 @@ class element_manager:
             print(f"Link Text: {info['link_text']}")
             print(f"  → By.LINK_TEXT: '{info['link_text']}'")
         
-        print(f"\n元素文本: {info['text'][:50]}..." if len(info['text']) > 50 else f"\n元素文本: {info['text']}")
-        print(f"位置: x={info['location']['x']}, y={info['location']['y']}")
-        print(f"大小: width={info['size']['width']}, height={info['size']['height']}")
+        print(f"\nElement text: {info['text'][:50]}..." if len(info['text']) > 50 else f"\nElement text: {info['text']}")
+        print(f"Location: x={info['location']['x']}, y={info['location']['y']}")
+        print(f"Size: width={info['size']['width']}, height={info['size']['height']}")
         
         best_locator = self.get_best_locator()
-        print(f"\n推荐定位方式: By.{best_locator[0].upper()} = '{best_locator[1]}'")
+        print(f"\nRecommended location method: By.{best_locator[0].upper()} = '{best_locator[1]}'")
         print("=" * 50)
 
 

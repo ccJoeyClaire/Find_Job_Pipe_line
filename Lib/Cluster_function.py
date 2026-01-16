@@ -1,4 +1,4 @@
-from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans, SpectralClustering
+from sklearn.cluster import HDBSCAN, DBSCAN, AgglomerativeClustering, KMeans, SpectralClustering
 from sklearn.neighbors import kneighbors_graph
 from sklearn.metrics import silhouette_score
 from sklearn.metrics.pairwise import cosine_distances

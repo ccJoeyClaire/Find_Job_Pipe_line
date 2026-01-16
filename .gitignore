@@ -1,1 +1,63 @@
+# ========== Python ==========
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ========== Jupyter ==========
+.ipynb_checkpoints/
+*.ipynb
+
+# ========== 日志文件 ==========
+*.log
 logs/
+log/
+
+# ========== 环境变量 ==========
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ========== IDE ==========
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ========== 系统文件 ==========
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ========== 数据文件 ==========
+*.db
+*.sqlite
+*.csv
+*.xlsx
+*.pkl
+*.pickle
+*.parquet
+*.html

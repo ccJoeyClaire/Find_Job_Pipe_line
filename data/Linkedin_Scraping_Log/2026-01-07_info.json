@@ -1,0 +1,6 @@
+{
+    "page": 3,
+    "page_num": 4,
+    "search_keywords": "data engineer",
+    "error_page_info": "页面加载检测失败: Message: invalid session id: session deleted as the browser has closed the connection\nfrom disconnected: not connected to DevTools\n  (Session info: chrome=143.0.7499.170); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception\nStacktrace:\nSymbols not available. Dumping unresolved backtrace:\n\t0xaf4103\n\t0xaf4144\n\t0x8fe71d\n\t0x8ed910\n\t0x90c714\n\t0x973475\n\t0x98e749\n\t0x96c706\n\t0x93da30\n\t0x93ed54\n\t0xd657b4\n\t0xd6098a\n\t0xb1c392\n\t0xb0c4c8\n\t0xb1324d\n\t0xafc478\n\t0xafc63c\n\t0xae67ca\n\t0x76aa5d49\n\t0x77dad5db\n\t0x77dad561\n"
+}

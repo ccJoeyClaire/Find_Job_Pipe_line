@@ -9,11 +9,26 @@ import requests
 from bs4 import BeautifulSoup
 
 import os
+import sys
 import importlib
 
 from action import driver_manager
 from action import element_manager
 
+import json_yaml_IO
+
+current_dir = os.getcwd()
+print(f"Current directory: {current_dir}")
+if current_dir.endswith('Find_Job_Pipe_Line_V2'):
+    project_root = current_dir
+else:
+    project_root = os.path.dirname(current_dir)
+sys.path.insert(0, project_root)
+lib_path = os.path.join(project_root, 'Lib')
+sys.path.insert(0, lib_path)
+
+print(f"Project root: {project_root}")
+# %%
 class linkedin_job_scraper(driver_manager):
     def __init__(self):
         super().__init__()
@@ -132,10 +147,10 @@ class linkedin_job_scraper(driver_manager):
                         self.click_element(button)
                         time.sleep(0.5)  # 等待内容展开
                     except Exception as e:
-                        print(f"点击展开按钮失败: {e}")
+                        print(f"Error clicking expand buttons: {e}")
                         continue
             except Exception as e:
-                print(f"查找展开按钮失败: {e}")
+                print(f"Error finding expand buttons: {e}")
         
         # 等待内容完全展开
         time.sleep(1)
@@ -220,18 +235,48 @@ class linkedin_job_scraper(driver_manager):
 
         return job_details_set
 
-    def get_all_job_details(self, page_num):
+    def get_all_job_details(self, page_num, search_keywords):
+        from datetime import datetime
+        now = datetime.now().strftime('%Y-%m-%d')
         all_job_details_set = {}
         for page in range(page_num):
+            print(f"Processing page {page + 1}/{page_num}...")
 
             old_params_keys = ['start', 'keywords']
-            new_params_values = [page * 25, 'data analyst']
+            new_params_values = [page * 25 if page > 0 else 0, search_keywords]
 
-            self.switch_to_url(old_params_keys, new_params_values)
-            time.sleep(1)
+            # 使用页面加载检测，检查 job_list_element 是否存在
+            page_loaded, error_page_info = self.switch_to_url(
+                old_params_keys, 
+                new_params_values,
+                check_element=(By.CSS_SELECTOR, self.job_list_css_selector)
+            )
+            
+            if not page_loaded:
+                print(f"Warning: Page {page + 1} cannot be loaded")
+                print(f"Collected {len(all_job_details_set)} job details, exiting and saving...")
+                info = {
+                    'page': page + 1,
+                    'page_num': page_num,
+                    'search_keywords': search_keywords,
+                    'error_page_info': error_page_info
+                }
+                json_yaml_IO.write_json(f"{project_root}/data/Linkedin_Scraping_Log/{now}_info.json", info)
+                if all_job_details_set:
+                    return all_job_details_set
+            time.sleep(3)
 
             job_details_set = self.get_1page_job_details()
             all_job_details_set.update(job_details_set)
+            print(f"Page {page + 1} successfully collected {len(job_details_set)} job details, total {len(all_job_details_set)}")
+
+        info = {
+            'page': page_num,
+            'page_num': page_num,
+            'success_message': f"Successfully collected {len(all_job_details_set)} job details"
+        }
+        json_yaml_IO.write_json(f"{project_root}/data/Linkedin_Scraping_Log/{now}_info.json", info)
+
         return all_job_details_set
 
     def save_job_details(self, job_id, job_details_soup):
@@ -254,11 +299,43 @@ if __name__ == "__main__":
     else:
         print("Login failed")
     # %%
-    scraper.save_dir = f"test_data/{today}"
-    job_details_set = scraper.get_all_job_details(page_num=4)
-    for job_id, job_details_soup in job_details_set.items():
-        scraper.save_job_details(job_id, job_details_soup)
+    from minio import Minio
+    from minio.error import S3Error
 
+    import io
+
+    client = Minio(
+        endpoint="localhost:9000",
+        access_key="minioadmin",
+        secret_key="minioadmin",
+        secure=False
+    )
+
+    bucket_name = "jobdatabucket"
+    object_name = f"raw/Linkedin_html/dt={today}/"
+
+    def up_load_to_minio(file_bytes, bucket_name, object_name, object_type):
+        data_stream = io.BytesIO(file_bytes)
+        client.put_object(
+            bucket_name=bucket_name, 
+            object_name=object_name, 
+            data=data_stream, 
+            length=len(file_bytes),
+            content_type=object_type
+        )
+
+    # %%
+    job_details_set = scraper.get_all_job_details(page_num=16, search_keywords='data engineer')
+    
+    # %%
+    for job_id, job_details_soup in job_details_set.items():
+        file_bytes = job_details_soup.prettify().encode('utf-8')
+        up_load_to_minio(
+            file_bytes, 
+            bucket_name, 
+            f"raw/Linkedin_html/dt={today}/{job_id}.html",
+            "text/html"
+        )
 
 
 # %%
