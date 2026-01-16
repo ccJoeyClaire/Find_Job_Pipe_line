@@ -1,7 +1,7 @@
 # 🎯 Intelligent Job Pipeline - Data Engineering Project
 @
 
-[English](/README_EN.md) | [中文](/README.md)
+[English](README_EN.md) | [中文](README.md)
 
 > An end-to-end data engineering practice project based on Lakehouse architecture, implementing a complete data pipeline from LinkedIn job data collection, processing, analysis to intelligent filtering.
 
