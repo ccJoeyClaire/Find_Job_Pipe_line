@@ -1,7 +1,7 @@
 # 🎯 Intelligent Job Pipeline - 智能职位数据管道系统
 @
 
-[English](README_EN.md) | [中文](README.md)
+[English](/README_EN.md) | [中文](/README.md)
 
 > 基于湖仓架构（Lakehouse）的端到端数据工程实践项目，实现从 LinkedIn 职位数据采集、处理、分析到智能筛选的完整数据管道。
 
