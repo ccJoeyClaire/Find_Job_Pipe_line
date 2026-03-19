@@ -9,5 +9,7 @@ SET s3_url_style='path';
 
 set time zone 'Asia/Shanghai';
 
+-- ' || strftime(current_date, '%Y%m%d') || '
+
 SELECT * 
-FROM read_json('s3://jobdatabucket/bronze/raw_json/dt=' || strftime(current_date, '%Y%m%d') || '/*.json') as jd
+FROM read_json_auto('s3://jobdatabucket/bronze/raw_json/dt=20260225/*.json') as jd

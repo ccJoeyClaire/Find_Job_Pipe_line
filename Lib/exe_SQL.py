@@ -25,8 +25,11 @@ class Exe_SQL:
     def connect(self):
         try:
             conn = duckdb.connect()
+            print(f"Connecting to DuckDB: {self.endpoint}")
             conn.execute("INSTALL httpfs")
+            print(f"Installed httpfs")
             conn.execute("LOAD httpfs")
+            print(f"Loaded httpfs")
             conn.execute(f"SET s3_endpoint='{self.endpoint}'")
             conn.execute(f"SET s3_access_key_id='{self.access_key}'")
             conn.execute(f"SET s3_secret_access_key='{self.secret_key}'")
@@ -65,3 +68,9 @@ class Exe_SQL:
         except Exception as e:
             print(f"Error closing DuckDB connection: {e}")
             return False
+
+if __name__ == "__main__":
+    duckdb_engine = Exe_SQL()
+    duckdb_engine.connect()
+    df = duckdb_engine.execute_sql_file('read_co_info.sql')
+    print(df)

@@ -16,7 +16,7 @@ jd_processed as (
     FROM read_parquet('s3://jobdatabucket/silver/JD_Processed/dt='|| strftime(current_date, '%Y%m%d') || '/JD_Processed.parquet')
 )
 SELECT jd.*, co.company_url, co.company_box_content, co.company_score
-FROM read_json('s3://jobdatabucket/bronze/raw_json/dt='|| strftime(current_date, '%Y%m%d') || '/*.json') as jd
+FROM read_json_auto('s3://jobdatabucket/bronze/raw_json/dt=20260225/*.json') as jd
 JOIN company_info as co
 ON jd.company_name = co.company_name
 JOIN jd_processed as jd_p

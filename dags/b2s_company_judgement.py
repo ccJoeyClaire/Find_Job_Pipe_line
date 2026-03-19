@@ -1,3 +1,4 @@
+# %%
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, TimeoutError as FutureTimeoutError, as_completed
@@ -43,13 +44,16 @@ prompts_path = os.path.join(project_root, 'Prompts/company_judgement.yaml')
 prompts_config = read_yaml(prompts_path)
 prompt = prompts_config.get('Company_score_prompt')
 
+config_path = os.path.join(project_root, 'Lib', 'config_this_before_action.yaml')
+config_info = read_yaml(config_path)
 
 llm_model = LLM_model(
-    api_key="sk-113e8f8fe0ad4e73b73a4232ab5b4d36",
-    base_url="https://api.deepseek.com",
+    api_key=config_info["your_LLM_api_key"],
+    base_url=config_info["your_LLM_base_url"],
     prompts_file=prompts_path
 )
 
+# %%
 import pandas as pd
 import json
 def get_company_score(content):
@@ -63,10 +67,9 @@ def get_company_score(content):
     return result
 
 
-
+# %%
 def bronze_company_judgement():
     df = duckdb_engine.execute_sql_file('read_co_info.sql')
-
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = {}
 

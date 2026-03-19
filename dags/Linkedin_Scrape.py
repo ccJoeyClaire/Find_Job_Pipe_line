@@ -44,13 +44,15 @@ def up_load_to_minio(file_bytes, bucket_name, object_name):
         data=data_stream,
         length=len(file_bytes)
     )
-
+# %%
 if __name__ == "__main__":
     today = datetime.now().strftime('%Y%m%d')
     scraper = linkedin_job_scraper()
     scraper.get_url(target_url=scraper.base_url)
     time.sleep(10)
+    # %%
     scraper.login()
+    # %%
     if scraper.check_login_success():
         print("Login successful")
     else:
@@ -58,8 +60,9 @@ if __name__ == "__main__":
     
     bucket_name = "jobdatabucket"
 
-    job_details_set = scraper.get_all_job_details(page_num=4, search_keywords='data engineer')
+    job_details_set = scraper.get_all_job_details(page_num=2, search_keywords='data engineer')
     for job_id, job_details_soup in job_details_set.items():
         object_name = f"raw/Linkedin_html/dt={today}/{job_id}.html"
         file_bytes = html_to_bytes(job_details_soup.prettify())
         up_load_to_minio(file_bytes, bucket_name, object_name)
+# %%

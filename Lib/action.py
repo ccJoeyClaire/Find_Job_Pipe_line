@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Union
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -21,6 +21,9 @@ import requests
 from bs4 import BeautifulSoup
 
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
+
+
 
 def scroll_script(
     direction: str = 'down', # 'up' / 'down' or 'top' / 'bottom'
@@ -45,145 +48,13 @@ def scroll_script(
 
 
 class driver_manager:
-    def __init__(self, chrome_driver_path: str = None):
-        """
-        初始化浏览器驱动管理器
-        
-        Args:
-            chrome_driver_path: ChromeDriver 路径（可选），如果提供则直接使用，否则尝试自动下载或查找本地已下载的
-        """
-        import os
-        import glob
-        
+    def __init__(self, chrome_driver_path: str | None = None):
         if chrome_driver_path is None:
-            chrome_driver_path = "C:\ProgramData\chromedriver\chromedriver.exe"
-
-        try:
-            if chrome_driver_path:
-                # 使用指定的 ChromeDriver 路径
-                if not os.path.exists(chrome_driver_path):
-                    raise FileNotFoundError(f"ChromeDriver does not exist: {chrome_driver_path}")
-                service = Service(chrome_driver_path)
-            else:
-                # 优先使用系统安装的 ChromeDriver（Docker 构建时安装）
-                system_chromedriver = "/usr/local/bin/chromedriver"
-                print(f" Checking system ChromeDriver: {system_chromedriver}")
-                service = None
-                
-                if os.path.exists(system_chromedriver):
-                    # 检查文件是否可执行
-                    if os.access(system_chromedriver, os.X_OK):
-                        print(f" Using system ChromeDriver: {system_chromedriver}")
-                        service = Service(system_chromedriver)
-                    else:
-                        print(f" System ChromeDriver exists but is not executable, trying to add execution permission")
-                        try:
-                            os.chmod(system_chromedriver, 0o755)
-                            if os.access(system_chromedriver, os.X_OK):
-                                print(f" Using system ChromeDriver: {system_chromedriver}")
-                                service = Service(system_chromedriver)
-                            else:
-                                print(f" Cannot set execution permission, trying other methods")
-                        except Exception as e:
-                            print(f" Setting execution permission failed: {e}，trying other methods")
-                else:
-                    print(f" System ChromeDriver does not exist: {system_chromedriver}")
-                
-                # 如果系统 ChromeDriver 不可用，尝试其他方法
-                if service is None:
-                    # 尝试查找本地已下载的 ChromeDriver（webdriver_manager 的缓存位置）
-                    print(f" Finding local cached ChromeDriver...")
-                    local_driver_path = self._find_local_chromedriver()
-                    if local_driver_path and os.path.exists(local_driver_path):
-                        print(f" Using local ChromeDriver: {local_driver_path}")
-                        service = Service(local_driver_path)
-                    else:
-                        # 尝试自动下载（可能失败）
-                        print(f" Attempting to automatically download ChromeDriver (可能因网络问题失败)...")
-                        try:
-                            service = Service(ChromeDriverManager().install())
-                            print(f" ChromeDriver download successful")
-                        except Exception as e:
-                            print(f" ChromeDriverManager download failed: {e}")
-                            print("Tips: Can manually specify ChromeDriver path, or check network connection")
-                            raise ConnectionError(
-                                f"Cannot download ChromeDriver: {e}\n"
-                                "Solutions:\n"
-                                "1. Check network connection (need to access GitHub）\n"
-                                "2. Manually download ChromeDriver and specify path\n"
-                                "3. Use proxy or VPN\n"
-                                "4. Ensure ChromeDriver is correctly installed in /usr/local/bin/chromedriver when building Docker"
-                            )
-            
-            # 配置 Chrome 选项（支持 Docker 环境）
-            
-            chrome_options = Options()
-
-            
-            # chrome_options.add_argument('--headless')  # 无头模式
-            # chrome_options.add_argument('--no-sandbox')  # Docker 环境必需
-            # chrome_options.add_argument('--disable-dev-shm-usage')  # 避免共享内存问题
-            # chrome_options.add_argument('--disable-gpu')  # 禁用 GPU
-            # chrome_options.add_argument('--window-size=1920,1080')  # 设置窗口大小
-            # chrome_options.add_argument('--disable-blink-features=AutomationControlled')  # 避免被检测
-
-            # 检测是否在 Docker 环境中
-            if os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER'):
-                # Docker 环境：使用系统安装的 Chrome
-                chrome_options.binary_location = '/usr/bin/google-chrome'
-            
-            self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            self.base_url = None
-            self.current_element = None
-        except ConnectionError:
-            raise
-        except Exception as e:
-            print(f" Initialization of browser driver failed: {e}")
-            raise
-    
-    def _find_local_chromedriver(self) -> str:
-        """
-        查找本地已下载的 ChromeDriver（webdriver_manager 缓存位置）
-        
-        Returns:
-            str: ChromeDriver 路径，如果未找到返回 None
-        """
-        import os
-        import glob
-        
-        # webdriver_manager 的默认缓存位置（支持 Windows 和 Linux）
-        possible_base_paths = [
-            os.path.expanduser("~/.wdm/drivers/chromedriver"),
-            os.path.join(os.environ.get("USERPROFILE", ""), ".wdm", "drivers", "chromedriver"),
-            os.path.join(os.environ.get("LOCALAPPDATA", ""), ".wdm", "drivers", "chromedriver"),
-            os.path.join(os.environ.get("HOME", ""), ".wdm", "drivers", "chromedriver"),
-        ]
-        
-        # 查找所有可能的 ChromeDriver 文件（Windows: .exe, Linux: 无扩展名）
-        driver_patterns = [
-            "**/chromedriver.exe",  # Windows
-            "**/chromedriver-linux64/chromedriver",  # Linux (新版本)
-            "**/chromedriver",  # Linux (旧版本或直接文件)
-        ]
-        
-        all_matches = []
-        for base_path in possible_base_paths:
-            if not base_path or not os.path.exists(base_path):
-                continue
-            for pattern in driver_patterns:
-                full_pattern = os.path.join(base_path, pattern)
-                matches = glob.glob(full_pattern, recursive=True)
-                if matches:
-                    # 过滤出可执行的文件
-                    for match in matches:
-                        if os.path.isfile(match) and os.access(match, os.X_OK):
-                            all_matches.append(match)
-        
-        if all_matches:
-            # 返回最新的（按修改时间排序）
-            return max(all_matches, key=os.path.getmtime)
-        
-        return None
+            chrome_driver_path = r"C:\Users\JoeyC\Downloads\chromedriver-win32\chromedriver-win32\chromedriver.exe"
+        else:
+            chrome_driver_path = chrome_driver_path
+        service = Service(executable_path=chrome_driver_path)
+        self.driver = webdriver.Chrome(service=service)
 
     def is_page_loaded(self, expected_url: str = None, check_element: tuple = None, wait_time: int = 10) -> bool:
         """
@@ -287,6 +158,31 @@ class driver_manager:
         except Exception as e:
             print(f"Error getting element: {e}")
             return None
+
+    def get_element_with_fallbacks(
+        self,
+        locators: List[tuple],
+        wait_time_per_try: int = 5,
+    ):
+        """
+        Try multiple locators in order; return the first element found.
+        Makes selectors more resilient to frontend changes.
+
+        Args:
+            locators: List of (by, value) tuples, e.g. [(By.CSS_SELECTOR, ".btn"), (By.XPATH, "//button[.='Sign in']")]
+            wait_time_per_try: Max seconds to wait for each locator before trying the next.
+
+        Returns:
+            WebElement or None if no locator matches.
+        """
+        for by, value in locators:
+            try:
+                element = self.get_element(by, value, wait_time=wait_time_per_try)
+                if element is not None:
+                    return element
+            except Exception:
+                continue
+        return None
     
     def click_element(self, element=None, by=None, value=None):
         """
@@ -437,17 +333,22 @@ class driver_manager:
 
 class element_manager:
     """
-    元素管理器：用于获取 WebElement 的定位信息
+    元素管理器：用于获取 WebElement 或复制 HTML 的定位信息。
+    支持两种输入方式：
+    1. Selenium WebElement — 需先通过 driver 找到元素
+    2. 从浏览器复制的 HTML 字符串 — 直接粘贴即可得到定位器，无需先 get element
     """
-    def __init__(self, element: WebElement):
+    def __init__(self, element: Union[WebElement, str]):
         """
         初始化元素管理器
         
         Args:
-            element: Selenium WebElement 对象
+            element: Selenium WebElement 对象，或从浏览器复制的元素 HTML 字符串
+                     （如右键元素 -> Copy -> Copy element）
         """
         self.element = element
         self._locator_info = None
+        self._from_html = isinstance(element, str)
     
     def get_locator_info(self) -> dict:
         """
@@ -471,6 +372,11 @@ class element_manager:
                 }
         """
         if self._locator_info is not None:
+            return self._locator_info
+        
+        # 从复制的 HTML 字符串直接解析定位信息（无需先 get element）
+        if self._from_html:
+            self._locator_info = self._parse_html_locator_info()
             return self._locator_info
         
         info = {}
@@ -553,6 +459,93 @@ class element_manager:
         info['size'] = {'width': size['width'], 'height': size['height']}
         
         self._locator_info = info
+        return info
+    
+    def _parse_html_locator_info(self) -> dict:
+        """
+        从复制的 HTML 字符串解析定位信息（无需 Selenium WebElement）。
+        用于在浏览器中复制元素后，直接得到可用的定位器。
+        
+        Returns:
+            dict: 与 get_locator_info() 结构一致（location/size 为 None）
+        """
+        html = self.element.strip()
+        soup = BeautifulSoup(html, 'html.parser')
+        tag = soup.find(True)  # 第一个标签即复制的根元素
+        if tag is None:
+            return {
+                'id': None, 'class_name': None, 'tag_name': None, 'name': None,
+                'xpath': None, 'css_selector': None, 'link_text': None, 'partial_link_text': None,
+                'id_locator': None, 'class_name_locator': None, 'tag_name_locator': (By.TAG_NAME, 'body'),
+                'name_locator': None, 'xpath_locator': None, 'css_selector_locator': None,
+                'link_text_locator': None, 'attributes': {}, 'text': '', 'location': None, 'size': None,
+            }
+        
+        tag_name = tag.name.lower() if tag.name else None
+        if not tag_name:
+            tag_name = 'div'
+        
+        attrs = dict(tag.attrs) if tag.attrs else {}
+        element_id = attrs.get('id') or None
+        class_val = attrs.get('class')
+        if isinstance(class_val, list):
+            class_str = ' '.join(class_val) if class_val else None
+            first_class = class_val[0] if class_val else None
+        else:
+            class_str = class_val if class_val else None
+            first_class = class_str.split()[0] if class_str else None
+        name_attr = attrs.get('name') or None
+        text = tag.get_text(separator=' ', strip=True) if tag else ''
+        
+        info = {}
+        info['id'] = element_id
+        info['id_locator'] = (By.ID, element_id) if element_id else None
+        info['class_name'] = class_str
+        info['class_name_locator'] = (By.CLASS_NAME, first_class) if first_class else None
+        info['tag_name'] = tag_name
+        info['tag_name_locator'] = (By.TAG_NAME, tag_name)
+        info['name'] = name_attr
+        info['name_locator'] = (By.NAME, name_attr) if name_attr else None
+        
+        # XPath：优先 id，其次 data-* 等唯一属性，再 class
+        if element_id:
+            xpath = f"//*[@id='{element_id}']"
+        else:
+            data_attr = next((k for k in attrs if k.startswith('data-')), None)
+            if data_attr:
+                val = attrs[data_attr]
+                xpath = f"//{tag_name}[@{data_attr}='{val}']"
+            elif first_class:
+                xpath = f"//{tag_name}[contains(@class,'{first_class}')]"
+            else:
+                xpath = f"//{tag_name}"
+        info['xpath'] = xpath
+        info['xpath_locator'] = (By.XPATH, xpath)
+        
+        # CSS Selector：优先 id，再 class，再 tag
+        if element_id:
+            css = f"#{element_id}"
+        elif first_class:
+            css = f".{first_class}"
+        else:
+            css = tag_name
+        info['css_selector'] = css
+        info['css_selector_locator'] = (By.CSS_SELECTOR, css)
+        
+        if tag_name == 'a':
+            info['link_text'] = text if text else None
+            info['link_text_locator'] = (By.LINK_TEXT, text) if text else None
+            info['partial_link_text'] = text[:20] if text else None
+        else:
+            info['link_text'] = None
+            info['link_text_locator'] = None
+            info['partial_link_text'] = None
+        
+        info['attributes'] = attrs
+        info['text'] = text
+        info['location'] = None
+        info['size'] = None
+        
         return info
     
     def parse_browser_selector(self, browser_selector: str) -> dict:
@@ -849,8 +842,10 @@ class element_manager:
             print(f"  → By.LINK_TEXT: '{info['link_text']}'")
         
         print(f"\nElement text: {info['text'][:50]}..." if len(info['text']) > 50 else f"\nElement text: {info['text']}")
-        print(f"Location: x={info['location']['x']}, y={info['location']['y']}")
-        print(f"Size: width={info['size']['width']}, height={info['size']['height']}")
+        if info.get('location') is not None:
+            print(f"Location: x={info['location']['x']}, y={info['location']['y']}")
+        if info.get('size') is not None:
+            print(f"Size: width={info['size']['width']}, height={info['size']['height']}")
         
         best_locator = self.get_best_locator()
         print(f"\nRecommended location method: By.{best_locator[0].upper()} = '{best_locator[1]}'")

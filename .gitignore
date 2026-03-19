@@ -61,3 +61,6 @@ Thumbs.db
 *.pickle
 *.parquet
 *.html
+
+config_this_before_action.yaml
+

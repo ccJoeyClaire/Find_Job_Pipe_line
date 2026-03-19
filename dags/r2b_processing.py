@@ -188,8 +188,13 @@ def main():
     
     object_path = f"bronze/raw_json/dt={today}"
     for processed_content in processed_contents:
-        content_name = f'{processed_content['company_name']}_{processed_content['job_name']}.json'
+        company_name = processed_content['company_name']
+        job_name = processed_content['job_name']
+        if company_name is None or job_name is None:
+            continue
+        content_name = f'{company_name}_{job_name}.json'
         save_json_to_s3(processed_content, bucket_name, object_path, content_name)
+    print(f"Total time taken: {time.time() - start_time:.2f} seconds")
 
 
 if __name__ == "__main__":

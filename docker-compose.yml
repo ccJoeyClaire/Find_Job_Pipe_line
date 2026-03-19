@@ -132,7 +132,7 @@ services:
 
   # --------------------------------------------------------------------------
   spark-master:
-    image: apache/spark:3.5.7-python3
+    image: spark:3.5.7
     container_name: spark-master
     environment:
       - SPARK_MASTER_HOST=localhost                       
@@ -157,7 +157,7 @@ services:
       - app-network
 
   spark-worker:
-    image: apache/spark:3.5.7-python3
+    image: spark:3.5.7
     container_name: spark-worker
     environment:
       SPARK_NO_DAEMONIZE: "true"
@@ -177,35 +177,6 @@ services:
     networks:
       - app-network
 
-  # --------------------------------------------------------------------------
-  # Python Environment (with all project dependencies)
-  # --------------------------------------------------------------------------
-  python:
-    build:
-      context: .
-      dockerfile: Dockerfile.python
-    image: find-job-python:latest
-    container_name: python-env
-    volumes:
-      - ../Lib:/app/lib
-      - ./data:/app/data
-      - ./logs:/app/logs
-      - .:/app/workflow
-    working_dir: /app
-    environment:
-      - PYTHONPATH=/app:/app/lib
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
-      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - SPARK_MASTER=spark://spark-master:7077
-    command: tail -f /dev/null
-    depends_on:
-      - minio
-      - spark-master
-    restart: unless-stopped
-    networks:
-      - app-network
-        
 volumes:
   postgres-db-volume:
   minio-data:

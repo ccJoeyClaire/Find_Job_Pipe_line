@@ -1,0 +1,40 @@
+# Python 基础镜像（包含所有项目依赖）
+# 用途：独立的 Python 环境，包含所有项目依赖，用于湖仓一体体系
+FROM python:3.11-slim
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装系统依赖（包括 Java，Spark 需要）
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gcc \
+        g++ \
+        openjdk-21-jdk \
+        curl \
+        ca-certificates \
+        || true && \
+    (apt-get install -y --no-install-recommends --fix-missing \
+        libxcb-glx0 || true) && \
+    rm -rf /var/lib/apt/lists/*
+
+# 设置 Java 环境变量（Spark 需要）
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+ENV PATH=$PATH:$JAVA_HOME/bin
+
+# 配置 pip 使用国内镜像源（可选，如果在国内）
+# RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
+# 复制 requirements.txt
+COPY requirements.txt /app/requirements.txt
+
+# 安装 Python 依赖
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# 设置环境变量
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# 默认命令（可以覆盖）
+CMD ["python"]
+

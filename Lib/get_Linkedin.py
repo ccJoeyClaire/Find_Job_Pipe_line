@@ -28,25 +28,40 @@ lib_path = os.path.join(project_root, 'Lib')
 sys.path.insert(0, lib_path)
 
 print(f"Project root: {project_root}")
+config_path = os.path.join(project_root, 'Lib', 'config_this_before_action.yaml')
+config_info = json_yaml_IO.read_yaml(config_path) # type: ignore
 # %%
 class linkedin_job_scraper(driver_manager):
     def __init__(self):
         super().__init__()
         self.base_url = "https://www.linkedin.com/jobs/search/"
-        self.save_dir = "job_html_12_10"
+        self.save_dir = None
         self.job_details_css_selector = "#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div"
         self.job_list_css_selector = "#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__list > div"
         self.pagination_css_selector = "#jobs-search-results-footer > div.jobs-search-pagination.jobs-search-results-list__pagination.p4 > p"
         self.job_card_class = "scaffold-layout__list-item"
 
+        self.login_button_css_selector = "#base-contextual-sign-in-modal > div > section > div > div > div.contextual-sign-in-modal__right-content > button"
+        self.email_input_id = "csm-v2_session_key"
+        self.password_input_id = "csm-v2_session_password"
+        self.submit_button_css_selector = "#base-contextual-sign-in-modal > div > section > div > div > div.contextual-sign-in-modal__right-content > form > div.flex.justify-between.sign-in-form__footer--full-width > button"
+
     def login(self):
         try:
-            login_button = self.get_element(By.CSS_SELECTOR, ".modal--contextual-sign-in .sign-in-modal__outlet-btn", wait_time=60)
+            login_button = self.get_element(
+                By.CSS_SELECTOR, 
+                self.login_button_css_selector, 
+                wait_time=15
+                )
             for i in range(3):
                 if login_button is None:
                     self.get_url(target_url=self.base_url)
                     time.sleep(10)
-                    login_button = self.get_element(By.CSS_SELECTOR, ".modal--contextual-sign-in .sign-in-modal__outlet-btn", wait_time=60)
+                    login_button = self.get_element(
+                        By.CSS_SELECTOR, 
+                        self.login_button_css_selector, 
+                        wait_time=15
+                    )
                     if login_button is None:
                         print(f"could not find login button after {i+1} attempts")
                     continue
@@ -59,13 +74,17 @@ class linkedin_job_scraper(driver_manager):
             return False
         time.sleep(0.5)
         try:
-            email_input = self.get_element(By.ID, "base-sign-in-modal_session_key", wait_time=60)
-            self.send_keys("joeyclaire234@gmail.com", email_input)
+            email_input = self.get_element(By.ID, self.email_input_id, wait_time=60)
+            self.send_keys(config_info["your_linkedin_username"], email_input)
             time.sleep(0.5)
-            password_input = self.get_element(By.ID, "base-sign-in-modal_session_password", wait_time=60)
-            self.send_keys("claire_234@", password_input)
+            password_input = self.get_element(By.ID, self.password_input_id, wait_time=60)
+            self.send_keys(config_info["your_linkedin_password"], password_input)
             time.sleep(0.5)
-            login_button2 = self.get_element(By.CSS_SELECTOR, "#base-sign-in-modal > div > section > div > div > form > div.flex.justify-between.sign-in-form__footer--full-width > button", wait_time=60)
+            login_button2 = self.get_element(
+                By.CSS_SELECTOR, 
+                self.submit_button_css_selector, 
+                wait_time=15
+            )
             self.click_element(login_button2)
         except Exception as e:
             print(f"Error logging in: could not find email or password input")
@@ -74,11 +93,11 @@ class linkedin_job_scraper(driver_manager):
         return True
 
     def check_login_success(self):
-        for i in range(3):
+        for i in range(20):
             job_list_element = self.get_element(By.CSS_SELECTOR, self.job_list_css_selector, wait_time=60)
             if job_list_element is None:
-                self.get_url(target_url=self.driver.current_url)
-                print(f"try refreshing the page")
+                time.sleep(120)
+                print(f"page not loaded, waiting for {180 * i} seconds")
                 continue
             else:
                 print(f"login successful")
@@ -290,10 +309,9 @@ if __name__ == "__main__":
     today = datetime.now().strftime('%Y%m%d')
     scraper = linkedin_job_scraper()
     scraper.get_url(target_url=scraper.base_url)
-    time.sleep(10)
-    scraper.login()
 
     # %%
+    scraper.login()
     if scraper.check_login_success():
         print("Login successful")
     else:
